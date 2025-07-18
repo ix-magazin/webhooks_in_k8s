@@ -1,0 +1,4 @@
+{{- if eq .Values.certificates.method "cert-manager" }}
+annotations:
+  cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "pod-label-mutator.fullname" . }}-cert
+{{- end }}

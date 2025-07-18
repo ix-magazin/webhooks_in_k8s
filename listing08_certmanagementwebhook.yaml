@@ -1,0 +1,45 @@
+# templates/certificates.yaml
+{{- if eq .Values.certificates.method "self-signed" }}
+# Selbstsignierte Zertifikate werden vor der Bereitstellung generiert
+# und in das Chart-Verzeichnis unter certs/ gelegt
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "pod-label-mutator.fullname" . }}-certs
+  labels:
+    {{- include "pod-label-mutator.labels" . | nindent 4 }}
+type: kubernetes.io/tls
+data:
+  tls.crt: {{ .Files.Get "certs/tls.crt" | b64enc }}
+  tls.key: {{ .Files.Get "certs/tls.key" | b64enc }}
+{{- else if eq .Values.certificates.method "cert-manager" }}
+# Cert-Manager wird verwendet, um Zertifikate zu generieren
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "pod-label-mutator.fullname" . }}-cert
+  labels:
+    {{- include "pod-label-mutator.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "pod-label-mutator.fullname" . }}-certs
+  duration: {{ .Values.certificates.duration }}
+  renewBefore: 720h # 30 Tage
+  subject:
+    organizations:
+      - Kubernetes
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+  dnsNames:
+    - {{ include "pod-label-mutator.fullname" . }}
+    - {{ include "pod-label-mutator.fullname" . }}.{{ .Release.Namespace }}
+    - {{ include "pod-label-mutator.fullname" . }}.{{ .Release.Namespace }}.svc
+    - {{ include "pod-label-mutator.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: {{ .Values.certificates.certManager.issuer.kind }}
+    name: {{ .Values.certificates.certManager.issuer.name }}
+{{- end }}

@@ -1,0 +1,40 @@
+# values.yaml
+# Standardwerte für das pod-label-mutator Helm-Chart
+replicaCount: 1
+
+image:
+  repository: mein-registry/pod-label-mutator
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 443
+
+# Konfiguration für den Webhook
+webhook:
+  # Name des Webhooks
+  name: pod-label-mutator
+  # Namespace-Selektor für den Webhook (leer = alle Namespaces)
+  namespaceSelector: {}
+  # Objekt-Selektor für den Webhook
+  objectSelector: {}
+  # Regeln für den Webhook
+  rules:
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      operations: ["CREATE"]
+      resources: ["pods"]
+      scope: "Namespaced"
+
+# Zertifikatsmanagement
+certificates:
+  # Methode zur Zertifikatsverwaltung: "self-signed" oder "cert-manager"
+  method: "self-signed"
+  # Gültigkeitsdauer für selbstsignierte Zertifikate
+  duration: 8760h # 1 Jahr
+  # Konfiguration für cert-manager
+  certManager:
+    issuer:
+      kind: "ClusterIssuer"
+      name: "letsencrypt-prod"
